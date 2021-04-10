@@ -466,7 +466,7 @@ scheduler(void)
 {
   struct proc *p;
   struct cpu *c = mycpu();
-  int min_search_index = 1;
+  //int min_search_index = 1;
   c->proc = 0;
   for(;;){
     // Avoid deadlock by ensuring that devices can interrupt.
@@ -495,18 +495,17 @@ scheduler(void)
       struct proc *proc_for_exec = 0;
       for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
-        if (p->state != RUNNABLE)
-          continue; 
-
-        if (proc_for_exec == 0 || (((p->queue_location) >= min_search_index) && ((p->queue_location) < proc_for_exec->queue_location)))
-          proc_for_exec = p;
-        
+        if (p->state == RUNNABLE){
+          if (proc_for_exec == 0 || p->queue_location < proc_for_exec->queue_location){
+            proc_for_exec = p;
+          }
+        }
         release(&p->lock);
       }
       if (proc_for_exec != 0){
         acquire(&proc_for_exec->lock);
         if(proc_for_exec->state == RUNNABLE) {
-          min_search_index++;
+          //min_search_index = min_search_index + 1;
           // Switch to chosen process.  It is the process's job
           // to release its lock and then reacquire it
           // before jumping back to us.
