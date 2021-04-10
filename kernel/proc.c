@@ -266,7 +266,7 @@ userinit(void)
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
   p->state = RUNNABLE;
-  p->queue_location = alloc_queue_counter;
+  p->queue_location = alloc_queue_counter();
   release(&p->lock);
 }
 
@@ -338,7 +338,7 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
-  np->queue_location = alloc_queue_counter;
+  np->queue_location = alloc_queue_counter();
   release(&np->lock);
 
   return pid;
@@ -558,7 +558,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
-  p->queue_location = alloc_queue_counter;
+  p->queue_location = alloc_queue_counter();
   sched();
   release(&p->lock);
 }
@@ -627,7 +627,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
-        p->queue_location = alloc_queue_counter;
+        p->queue_location = alloc_queue_counter();
       }
       release(&p->lock);
     }
@@ -649,7 +649,7 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-        p->queue_location = alloc_queue_counter;
+        p->queue_location = alloc_queue_counter();
       }
       release(&p->lock);
       return 0;
