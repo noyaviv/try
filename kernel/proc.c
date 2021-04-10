@@ -101,6 +101,19 @@ allocpid() {
   return pid;
 }
 
+uint64
+alloc_queue_counter() {
+  uint64 next_queue_counter;
+  
+  acquire(&queue_lock);
+  next_queue_counter = queue_counter;
+  queue_counter = queue_counter + 1;
+  release(&queue_lock);
+
+  return pid;
+
+}
+
 // Look in the process table for an UNUSED proc.
 // If found, initialize state required to run in the kernel,
 // and return with p->lock held.
@@ -252,13 +265,8 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
-
   p->state = RUNNABLE;
-  printf("here?\n");
-  acquire(&queue_lock);
-  p->queue_location = queue_counter;
-  queue_counter++;
-  release(&queue_lock);
+  p->queue_location = alloc_queue_counter;
   release(&p->lock);
 }
 
@@ -330,10 +338,7 @@ fork(void)
 
   acquire(&np->lock);
   np->state = RUNNABLE;
-  acquire(&queue_lock);
-  np->queue_location = queue_counter;
-  queue_counter++;
-  release(&queue_lock);
+  np->queue_location = alloc_queue_counter;
   release(&np->lock);
 
   return pid;
@@ -489,14 +494,14 @@ scheduler(void)
       //int next_proc_for_exec = UINT64_MAX;
       struct proc *proc_for_exec = 0;
       for(p = proc; p < &proc[NPROC]; p++) {
-        acquire(&queue_lock);
+        acquire(&p->lock);
         if (p->state != RUNNABLE)
-        continue; 
+          continue; 
 
-        if (p->proc == 0 || (((p->queue_location) >= min_search_index) && ((p->queue_location) < proc_for_exec->queue_location))){
+        if (p->proc == 0 || (((p->queue_location) >= min_search_index) && ((p->queue_location) < proc_for_exec->queue_location)))
           proc_for_exec = p;
-        }
-        release(&queue_lock);
+        
+        release(&p->lock);
       }
       if (proc_for_exec != 0){
         acquire(&proc_for_exec->lock);
@@ -553,10 +558,7 @@ yield(void)
   struct proc *p = myproc();
   acquire(&p->lock);
   p->state = RUNNABLE;
-  acquire(&queue_lock);
-  p->queue_location = queue_counter;
-  queue_counter++;
-  release(&queue_lock);
+  p->queue_location = alloc_queue_counter;
   sched();
   release(&p->lock);
 }
@@ -625,10 +627,7 @@ wakeup(void *chan)
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
         p->state = RUNNABLE;
-        acquire(&queue_lock);
-        p->queue_location = queue_counter;
-        queue_counter++;
-        release(&queue_lock);
+        p->queue_location = alloc_queue_counter;
       }
       release(&p->lock);
     }
@@ -650,10 +649,7 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-        acquire(&queue_lock);
-        p->queue_location = queue_counter;
-        queue_counter++;
-        release(&queue_lock);
+        p->queue_location = alloc_queue_counter;
       }
       release(&p->lock);
       return 0;
