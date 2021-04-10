@@ -839,5 +839,6 @@ set_priority(int priority)
   acquire(&p->lock);
   p->priority = priority;
   release(&p->lock);
+  return 0; 
 
 }
