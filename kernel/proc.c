@@ -110,7 +110,7 @@ alloc_queue_counter() {
   queue_counter = queue_counter + 1;
   release(&queue_lock);
 
-  return pid;
+  return next_queue_counter;
 
 }
 
