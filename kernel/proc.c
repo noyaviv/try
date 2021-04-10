@@ -265,8 +265,8 @@ userinit(void)
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");
-  p->state = RUNNABLE;
   p->queue_location = alloc_queue_counter();
+  p->state = RUNNABLE;
   release(&p->lock);
 }
 
@@ -337,8 +337,8 @@ fork(void)
   release(&wait_lock);
 
   acquire(&np->lock);
-  np->state = RUNNABLE;
   np->queue_location = alloc_queue_counter();
+  np->state = RUNNABLE;
   release(&np->lock);
 
   return pid;
@@ -506,6 +506,7 @@ scheduler(void)
       if (proc_for_exec != 0){
         acquire(&proc_for_exec->lock);
         if(proc_for_exec->state == RUNNABLE) {
+          min_search_index++;
           // Switch to chosen process.  It is the process's job
           // to release its lock and then reacquire it
           // before jumping back to us.
@@ -557,8 +558,8 @@ yield(void)
 {
   struct proc *p = myproc();
   acquire(&p->lock);
-  p->state = RUNNABLE;
   p->queue_location = alloc_queue_counter();
+  p->state = RUNNABLE;
   sched();
   release(&p->lock);
 }
@@ -626,8 +627,8 @@ wakeup(void *chan)
     if(p != myproc()){
       acquire(&p->lock);
       if(p->state == SLEEPING && p->chan == chan) {
-        p->state = RUNNABLE;
         p->queue_location = alloc_queue_counter();
+        p->state = RUNNABLE;
       }
       release(&p->lock);
     }
