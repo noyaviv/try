@@ -121,7 +121,7 @@ ratio(struct proc *p) {
   ratio = (p->rutime * p->priority)/(p->rutime + p->stime); 
   release(&p->lock);
 
-  return pid;
+  return ratio;
 }
 
 // Look in the process table for an UNUSED proc.
