@@ -126,3 +126,14 @@ sys_wait_stat(void)
   }
   return wait_stat(status,performance);
 }
+
+uint64
+sys_set_priority(void)
+{
+   //call set_priority
+  int priority; 
+  if (argint(0, &priority) < 0)
+    return -1;
+  set_priority(priority);
+  return 0; 
+}

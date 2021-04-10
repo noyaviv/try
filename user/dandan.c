@@ -24,7 +24,7 @@ int main (int argc, char**argv){
     int i;
     // printf("trace.c. status addr = %d, performance addr = %d\n", &status, &pe);
 
-    int mask= (1<< SYS_fork) | (1<<SYS_wait) | 
+    int mask= (1<< SYS_fork) | (1<<SYS_wait);
 //(1<<SYS_set_priority);
     trace(mask,getpid());
    // set_priority(1);

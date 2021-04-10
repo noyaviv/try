@@ -100,7 +100,10 @@ struct proc {
   int retime;                  // task 3: the totel time the process spent in the RUNNABLE state
   int rutime;                  // task 3: the totel time the process spent in the RUNNING state
   int average_bursttime;       // task 3: average of bursstimes in 100ths (so average*100)
-  uint64 queue_location;       // task 4: queue position                      
+  uint64 queue_location;       // task 4.2: queue position 
+  int priority;                // task 4.4: priority field, gets from set_priority fun
+  int run_time_ratio;          // task 4.4: (𝑟𝑢𝑡𝑖𝑚𝑒 ∙ 𝑑𝑒𝑐𝑎𝑦𝑓𝑎𝑐𝑡𝑜𝑟) / (𝑟𝑢𝑡𝑖𝑚𝑒+𝑠𝑡𝑖𝑚𝑒)
+
 
   // proc_tree_lock must be held when using this:
   struct proc *parent;         // Parent process

@@ -520,6 +520,12 @@ scheduler(void)
         release(&proc_for_exec->lock);
       } 
     #endif
+
+    #ifdef CFCD 
+    // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
+    // needs to select a new process it will select the process with the minimum run time ratio
+  
+    #endif 
   }
 }
 
@@ -824,4 +830,14 @@ wait_stat(int* status, struct perf * performance)
     // Wait for a child to exit.
     sleep(p, &wait_lock);  //DOC: wait-sleep
   }
+}
+
+int
+set_priority(int priority) 
+{
+  struct proc *p = myproc();
+  acquire(&p->lock);
+  p->priority = priority;
+  release(&p->lock);
+
 }
