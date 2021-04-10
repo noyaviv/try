@@ -159,7 +159,7 @@ char* syscallsnames[]= {
 [SYS_mkdir]   "mkdir",
 [SYS_close]   "close",
 [SYS_trace]   "trace",
-[SYS_wait_stat] "wait_stat"
+[SYS_wait_stat] "wait_stat",
 [SYS_set_priority] "set_priority" };
 
 // modified
