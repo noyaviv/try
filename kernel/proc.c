@@ -498,7 +498,7 @@ scheduler(void)
         if (p->state != RUNNABLE)
           continue; 
 
-        if (p->proc == 0 || (((p->queue_location) >= min_search_index) && ((p->queue_location) < proc_for_exec->queue_location)))
+        if (proc_for_exec == 0 || (((p->queue_location) >= min_search_index) && ((p->queue_location) < proc_for_exec->queue_location)))
           proc_for_exec = p;
         
         release(&p->lock);
