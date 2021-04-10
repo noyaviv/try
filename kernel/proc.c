@@ -111,7 +111,17 @@ alloc_queue_counter() {
   release(&queue_lock);
 
   return next_queue_counter;
+}
 
+int
+ratio(struct proc *p) {
+  int ratio;
+  
+  acquire(&p->lock);
+  ratio = (p->rutime * p->priority)/(p->rutime + p->stime); 
+  release(&p->lock);
+
+  return pid;
 }
 
 // Look in the process table for an UNUSED proc.
@@ -267,6 +277,7 @@ userinit(void)
   p->cwd = namei("/");
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
+  p->priority = 5; // decay factor for normal priority
   release(&p->lock);
 }
 
@@ -524,7 +535,33 @@ scheduler(void)
     #ifdef CFCD 
     // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
     // needs to select a new process it will select the process with the minimum run time ratio
-  
+      struct proc *proc_for_exec = 0;
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state == RUNNABLE){
+          if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
+            proc_for_exec = p;
+          }
+        }
+        release(&p->lock);
+      }
+      if (proc_for_exec != 0){
+        acquire(&proc_for_exec->lock);
+        if(proc_for_exec->state == RUNNABLE) {
+          //min_search_index = min_search_index + 1;
+          // Switch to chosen process.  It is the process's job
+          // to release its lock and then reacquire it
+          // before jumping back to us.
+          proc_for_exec->state = RUNNING;
+          c->proc = proc_for_exec;
+          swtch(&c->context, &proc_for_exec->context);
+
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
+        release(&proc_for_exec->lock);
+      } 
     #endif 
   }
 }
