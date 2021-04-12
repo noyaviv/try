@@ -545,7 +545,6 @@ scheduler(void)
         acquire(&p->lock);
         if (p->state == RUNNABLE){
           if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
-            // min_burst = p->average_bursttime;
             min_burst_time_proc = p;
           }
         }
@@ -555,21 +554,18 @@ scheduler(void)
       // after finding min process- switch cpu to run it
       if(min_burst_time_proc != 0) {
         acquire(&min_burst_time_proc->lock);
-        if (min_burst_time_proc->state==RUNNABLE){
+        if (min_burst_time_proc->state == RUNNABLE){
           min_burst_time_proc->state = RUNNING;
           acquire(&tickslock);
-          int cur_ticks=ticks;
+          int cur_ticks = ticks;
           release(&tickslock);
           // min_burst_time_proc->start_running_tick=ticks;
           c->proc = min_burst_time_proc;
-          // printf("debug 2");
           swtch(&(c->context), &(min_burst_time_proc->context));
-          //int cur_bursttime= ticks-cur_ticks;
-            // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
-          acquire(&tickslock);
-          min_burst_time_proc->average_bursttime=ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
-          release(&tickslock);
-          // printf("debug 3");
+          // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
+          // acquire(&tickslock);
+          // min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
+          // release(&tickslock);
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
