@@ -79,9 +79,10 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
-    #ifdef CFSD || DEFAULT || SRT
+    #ifdef CFSD | DEFAULT | SRT
        if(ticks % QUANTUM == 0)
         yield();
+    #endif
     // #ifdef SCHEDUALFLAG
     //   if(ticks % QUANTUM == 0){
     //     switch(SCHEDFLAG) {
@@ -92,7 +93,6 @@ usertrap(void)
     //     }
     //   }
     // #endif
-    #endif
   }
 
   usertrapret();
@@ -166,9 +166,10 @@ kerneltrap()
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING){
-    #ifdef CFSD || DEFAULT || SRT
+    #ifdef CFSD | DEFAULT | SRT
      if(ticks % QUANTUM == 0)
       yield();
+    #endif
     //  if(ticks % QUANTUM == 0){
     //    switch(SCHEDFLAG) {
     //      case FCFS :
@@ -177,7 +178,6 @@ kerneltrap()
     //        yield();
     //    }
     // } 
-     #endif
   }
 
   // the yield() may have caused some traps to occur,
