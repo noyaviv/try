@@ -13,3 +13,4 @@
 #define MAXPATH      128            // maximum file path name
 #define QUANTUM      5              // measured in clock ticks
 #define UINT64_MAX   18446744073709551615    // task 4
+#define ALPHA        50                      // task 4.3

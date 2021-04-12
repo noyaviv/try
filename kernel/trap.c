@@ -79,15 +79,19 @@ usertrap(void)
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
-    #ifdef SCHEDUALFLAG
-      if(ticks % QUANTUM == 0){
-        switch(SCHEDFLAG) {
-          case FCFS :
-            break; 
-          default :
-            yield();
-        }
-      }
+    #ifdef CFSD || DEFAULT || SRT
+       if(ticks % QUANTUM == 0)
+        yield();
+    // #ifdef SCHEDUALFLAG
+    //   if(ticks % QUANTUM == 0){
+    //     switch(SCHEDFLAG) {
+    //       case FCFS :
+    //         break; 
+    //       default :
+    //         yield();
+    //     }
+    //   }
+    // #endif
     #endif
   }
 
@@ -162,15 +166,17 @@ kerneltrap()
 
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING){
-    #ifdef SCHEDUALFLAG
-     if(ticks % QUANTUM == 0){
-       switch(SCHEDFLAG) {
-         case FCFS :
-           break; 
-         default :
-           yield();
-       }
-     } 
+    #ifdef CFSD || DEFAULT || SRT
+     if(ticks % QUANTUM == 0)
+      yield();
+    //  if(ticks % QUANTUM == 0){
+    //    switch(SCHEDFLAG) {
+    //      case FCFS :
+    //        break; 
+    //      default :
+    //        yield();
+    //    }
+    // } 
      #endif
   }
 

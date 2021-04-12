@@ -533,6 +533,42 @@ scheduler(void)
         release(&proc_for_exec->lock);
       } 
     #endif
+    
+    #ifdef SRT
+      struct proc *min_burst_time_proc = 0;
+
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state == RUNNABLE){
+          if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
+            // min_burst = p->average_bursttime;
+            min_burst_time_proc = p;
+          }
+        }
+        release(&p->lock);
+      }
+
+      // after finding min process- switch cpu to run it
+      if(min_burst_time_proc != 0) {
+        acquire(&min_burst_time_proc->lock);
+        if (min_burst_time_proc->state==RUNNABLE){
+          min_burst_time_proc->state = RUNNING;
+          int cur_ticks=ticks;
+          // min_burst_time_proc->start_running_tick=ticks;
+          c->proc = min_burst_time_proc;
+          // printf("debug 2");
+          swtch(&(c->context), &(min_burst_time_proc->context));
+          //int cur_bursttime= ticks-cur_ticks;
+            // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
+          min_burst_time_proc->average_bursttime=ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
+          // printf("debug 3");
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
+        release(&min_burst_time_proc->lock);
+      }
+    #endif
 
     #ifdef CFSD 
     // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
