@@ -49,9 +49,9 @@ TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' 
 endif
 
 #define scheduling flag
-ifndef SCHEDFLAG
-SCHEDFLAG := DEFAULT
-endif
+# ifndef SCHEDFLAG
+# SCHEDFLAG := DEFAULT
+# endif
 
 QEMU = qemu-system-riscv64
 
