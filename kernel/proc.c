@@ -534,7 +534,7 @@ scheduler(void)
       } 
     #endif
 
-    #ifdef CFCD 
+    #ifdef CFSD 
     // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
     // needs to select a new process it will select the process with the minimum run time ratio
       struct proc *proc_for_exec = 0;
