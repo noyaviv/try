@@ -81,9 +81,10 @@ usertrap(void)
   if(which_dev == 2){
     #if defined CFSD || defined DEFAULT || defined SRT
       acquire(&tickslock);
+      int tick = ticks; 
+      release(&tickslock);
       if(ticks % QUANTUM == 0)
         yield();
-      release(&tickslock);
     #endif
 
     // #ifdef SCHEDUALFLAG
@@ -171,9 +172,11 @@ kerneltrap()
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING){
     #if defined CFSD || defined DEFAULT || defined SRT
       acquire(&tickslock);
-      if(ticks % QUANTUM == 0)
-        yield();
+      int tick = ticks; 
       release(&tickslock);
+      if(tick % QUANTUM == 0)
+        yield();
+
     #endif
     //  if(ticks % QUANTUM == 0){
     //    switch(SCHEDFLAG) {
