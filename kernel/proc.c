@@ -146,7 +146,9 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
+  acquire(&tickslock);
   p->ctime = ticks; 
+  release(&tickslock);
   p->stime =0;      
   p->retime =0;     
   p->rutime=0;      
@@ -409,7 +411,9 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
+  acquire(&tickslock);
   p->ttime = ticks;
+  release(&tickslock);
 
   release(&wait_lock);
 
@@ -553,14 +557,18 @@ scheduler(void)
         acquire(&min_burst_time_proc->lock);
         if (min_burst_time_proc->state==RUNNABLE){
           min_burst_time_proc->state = RUNNING;
+          acquire(&tickslock);
           int cur_ticks=ticks;
+          release(&tickslock);
           // min_burst_time_proc->start_running_tick=ticks;
           c->proc = min_burst_time_proc;
           // printf("debug 2");
           swtch(&(c->context), &(min_burst_time_proc->context));
           //int cur_bursttime= ticks-cur_ticks;
             // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
+          acquire(&tickslock);
           min_burst_time_proc->average_bursttime=ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
+          release(&tickslock);
           // printf("debug 3");
           // Process is done running for now.
           // It should have changed its p->state before coming back.

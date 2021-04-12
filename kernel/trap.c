@@ -80,8 +80,10 @@ usertrap(void)
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2){
     #if defined CFSD || defined DEFAULT || defined SRT
-       if(ticks % QUANTUM == 0)
+      acquire(&tickslock);
+      if(ticks % QUANTUM == 0)
         yield();
+      release(&tickslock);
     #endif
 
     // #ifdef SCHEDUALFLAG
@@ -168,8 +170,10 @@ kerneltrap()
   // give up the CPU if this is a timer interrupt.
   if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING){
     #if defined CFSD || defined DEFAULT || defined SRT
-     if(ticks % QUANTUM == 0)
-      yield();
+      acquire(&tickslock);
+      if(ticks % QUANTUM == 0)
+        yield();
+      release(&tickslock);
     #endif
     //  if(ticks % QUANTUM == 0){
     //    switch(SCHEDFLAG) {
