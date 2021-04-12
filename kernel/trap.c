@@ -83,7 +83,7 @@ usertrap(void)
       acquire(&tickslock);
       int tick = ticks; 
       release(&tickslock);
-      if(ticks % QUANTUM == 0)
+      if(tick % QUANTUM == 0)
         yield();
     #endif
 
