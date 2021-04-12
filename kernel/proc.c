@@ -152,6 +152,7 @@ found:
   p->rutime=0;      
   p->ttime = 0;     
   p->average_bursttime = QUANTUM*100;
+  p->priority = 5; 
 
   // Allocate a trapframe page.
   if((p->trapframe = (struct trapframe *)kalloc()) == 0){
@@ -277,7 +278,7 @@ userinit(void)
   p->cwd = namei("/");
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
-  p->priority = 5; // decay factor for normal priority
+  //p->priority = 5; // decay factor for normal priority
   release(&p->lock);
 }
 
@@ -327,6 +328,7 @@ fork(void)
   // copy saved user registers.
   *(np->trapframe) = *(p->trapframe);
   (np-> maskid) =  (p->maskid); // modified
+  (np->priority) = (p->priority); // task 4.4
   
   // Cause fork to return 0 in the child.
   np->trapframe->a0 = 0;

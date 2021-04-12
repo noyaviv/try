@@ -151,8 +151,16 @@ kerneltrap()
   }
 
   // give up the CPU if this is a timer interrupt.
-  if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING)
-    yield();
+  if(which_dev == 2 && myproc() != 0 && myproc()->state == RUNNING){
+    if(ticks % QUANTUM == 0){
+      switch(SCHEDFLAG) {
+        case FCFS :
+          break; 
+        default :
+          yield();
+      }
+    } 
+  }
 
   // the yield() may have caused some traps to occur,
   // so restore trap registers for use by kernelvec.S's sepc instruction.
