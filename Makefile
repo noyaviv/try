@@ -151,8 +151,6 @@ UPROGS=\
 	$U/_tracetest\
 	$U/_test3\
 	$U/_dandan\
-	$U/_test\
-
 
 
 fs.img: mkfs/mkfs path README $(UPROGS)

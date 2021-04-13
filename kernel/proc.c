@@ -5,7 +5,6 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
-#include <limits.h>
 
 
 struct cpu cpus[NCPU];
@@ -148,9 +147,9 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-  //acquire(&tickslock);
+  acquire(&tickslock);
   p->ctime = ticks; 
-  //release(&tickslock);
+  release(&tickslock);
   p->stime =0;      
   p->retime =0;     
   p->rutime=0;      
@@ -282,7 +281,6 @@ userinit(void)
   p->cwd = namei("/");
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
-  p->start_cur_runnable = ticks; 
   //p->priority = 5; // decay factor for normal priority
   release(&p->lock);
 }
@@ -357,7 +355,6 @@ fork(void)
   acquire(&np->lock);
   np->queue_location = alloc_queue_counter();
   np->state = RUNNABLE;
-  np->start_cur_runnable = ticks; 
   release(&np->lock);
 
   return pid;
@@ -415,9 +412,9 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
-  //acquire(&tickslock);
+  acquire(&tickslock);
   p->ttime = ticks;
-  //release(&tickslock);
+  release(&tickslock);
 
   release(&wait_lock);
 
@@ -501,24 +498,8 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           p->state = RUNNING;
-
-          acquire(&tickslock);
-          p->retime += (ticks - p->start_cur_runnable);
-          p->start_cur_runtime = ticks;
-          release(&tickslock);
-
           c->proc = p;
           swtch(&c->context, &p->context);
-
-          acquire(&tickslock);
-          int currcputime = ticks;
-          release(&tickslock);
-
-          swtch(&c->context, &min_burst_time_proc->context);
-          acquire(&tickslock);
-          int bursttime = ticks - currcputime;
-          release(&tickslock);
-          p->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*p->average_bursttime)/100 );
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
@@ -547,22 +528,8 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           proc_for_exec->state = RUNNING;
-
-          acquire(&tickslock);
-          proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);
-          proc_for_exec->start_cur_runtime = ticks;
-          release(&tickslock);
-
           c->proc = proc_for_exec;
-          acquire(&tickslock);
-          int currcputime = ticks;
-          release(&tickslock);
-
           swtch(&c->context, &proc_for_exec->context);
-          acquire(&tickslock);
-          int bursttime = ticks - currcputime;
-          release(&tickslock);
-          proc_for_exec->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
 
           // Process is done running for now.
           // It should have changed its p->state before coming back.
@@ -590,11 +557,6 @@ scheduler(void)
         if(min_burst_time_proc->state == RUNNABLE){
           min_burst_time_proc->state = RUNNING;
 
-          acquire(&tickslock);
-          min_burst_time_proc->retime += (ticks - min_burst_time_proc->start_cur_runnable);
-          min_burst_time_proc->start_cur_runtime = ticks;
-          release(&tickslock);
-
           c->proc = min_burst_time_proc;
           acquire(&tickslock);
           int currcputime = ticks;
@@ -612,86 +574,57 @@ scheduler(void)
         release(&min_burst_time_proc->lock);
       }
 
+      // // after finding min process- switch cpu to run it
+      // if(min_burst_time_proc != 0) {
+      //   acquire(&min_burst_time_proc->lock);
+      //   if (min_burst_time_proc->state == RUNNABLE){
+      //     min_burst_time_proc->state = RUNNING;
+      //     c->proc = min_burst_time_proc;
+      //     //acquire(&tickslock);
+      //     int cur_ticks = ticks;
+      //     //release(&tickslock);
+      //     // min_burst_time_proc->start_running_tick=ticks;
+      //     swtch(&(c->context), &(min_burst_time_proc->context));
+      //     // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
+      //     // acquire(&tickslock);
+      //      min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
+      //     //release(&tickslock);
+      //     c->proc = 0;
+      //   }
+      //   release(&min_burst_time_proc->lock);
+      // }
     #endif
 
     #ifdef CFSD 
-    struct proc* min_rt_ratio_p = 0;
-    int min_rt_ratio = INT_MAX;
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // p->priority is the decay factor.
-        int ratio;
-        if(((p->rutime)+(p->stime)) == 0){
-          ratio = 0;
-        }else{
-          ratio = ((p->rutime)*(p->priority))/((p->rutime)+(p->stime));
+    // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
+    // needs to select a new process it will select the process with the minimum run time ratio
+      struct proc *proc_for_exec = 0;
+      for(p = proc; p < &proc[NPROC]; p++) {
+        acquire(&p->lock);
+        if (p->state == RUNNABLE){
+          if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
+            proc_for_exec = p;
+          }
         }
-        if(ratio < min_rt_ratio){
-          min_rt_ratio_p = p;
-          min_rt_ratio = ratio;
-        } 
+        release(&p->lock);
       }
-      release(&p->lock);
-    }
+      if (proc_for_exec != 0){
+        acquire(&proc_for_exec->lock);
+        if(proc_for_exec->state == RUNNABLE) {
+          //min_search_index = min_search_index + 1;
+          // Switch to chosen process.  It is the process's job
+          // to release its lock and then reacquire it
+          // before jumping back to us.
+          proc_for_exec->state = RUNNING;
+          c->proc = proc_for_exec;
+          swtch(&c->context, &proc_for_exec->context);
 
-    if(min_rt_ratio_p != 0){
-      acquire(&min_rt_ratio_p->lock);
-      if(min_rt_ratio_p->state == RUNNABLE){
-        min_rt_ratio_p->state = RUNNING;
-        acquire(&tickslock);
-        min_rt_ratio_p->retime += (ticks - min_rt_ratio_p->start_cur_runnable);
-        min_rt_ratio_p->start_cur_runtime = ticks;
-        release(&tickslock);
-
-        c->proc = min_rt_ratio_p;
-        
-        acquire(&tickslock);
-        int currcputime = ticks;
-        release(&tickslock);
-
-        swtch(&c->context, &min_rt_ratio_p->context);
-        
-        acquire(&tickslock);
-        int bursttime = ticks - currcputime;
-        release(&tickslock);
-        
-        min_rt_ratio_p->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*min_rt_ratio_p->average_bursttime)/100 );
-        c->proc = 0;
-      }
-      release(&min_rt_ratio_p->lock);
-    }
-    // // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
-    // // needs to select a new process it will select the process with the minimum run time ratio
-    //   struct proc *proc_for_exec = 0;
-    //   for(p = proc; p < &proc[NPROC]; p++) {
-    //     acquire(&p->lock);
-    //     if (p->state == RUNNABLE){
-    //       if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
-    //         proc_for_exec = p;
-    //       }
-    //     }
-    //     release(&p->lock);
-    //   }
-    //   if (proc_for_exec != 0){
-    //     acquire(&proc_for_exec->lock);
-    //     if(proc_for_exec->state == RUNNABLE) {
-    //       proc_for_exec->state = RUNNING;
-    //       //acquire(&tickslock);
-    //       proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
-    //       proc_for_exec->start_cur_runtime = ticks;//
-    //       //release(&tickslock);
-    //       c->proc = proc_for_exec;
-    //       swtch(&c->context, &proc_for_exec->context);
-    //       //acquire(&tickslock);
-    //       proc_for_exec->rutime += (ticks - proc_for_exec->start_cur_runtime);
-    //       //release(&tickslock);
-    //       // Process is done running for now.
-    //       // It should have changed its p->state before coming back.
-    //       c->proc = 0;
-    //     }
-    //     release(&proc_for_exec->lock);
-    //   } 
+          // Process is done running for now.
+          // It should have changed its p->state before coming back.
+          c->proc = 0;
+        }
+        release(&proc_for_exec->lock);
+      } 
     #endif 
   }
 }
@@ -732,8 +665,6 @@ yield(void)
   acquire(&p->lock);
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
-  p->rutime += (ticks - (p->start_cur_runnable));
-  p->start_cur_runnable = ticks; 
   sched();
   release(&p->lock);
 }
@@ -779,9 +710,6 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-  //acquire(&tickslock);
-  p->start_cur_sleeping = ticks;
-  //release(&tickslock);
 
   sched();
 
@@ -806,10 +734,6 @@ wakeup(void *chan)
       if(p->state == SLEEPING && p->chan == chan) {
         p->queue_location = alloc_queue_counter();
         p->state = RUNNABLE;
-       // acquire(&tickslock);
-        p->stime += (ticks - p->start_cur_sleeping);  
-        p->start_cur_runnable = ticks;  
-        //release(&tickslock);
       }
       release(&p->lock);
     }
@@ -831,10 +755,6 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-       // acquire(&tickslock);
-        p->stime += (ticks - p->start_cur_sleeping);  
-        p->start_cur_runnable = ticks;  
-        //release(&tickslock);
         p->queue_location = alloc_queue_counter();
       }
       release(&p->lock);

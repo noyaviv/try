@@ -103,9 +103,6 @@ struct proc {
   uint64 queue_location;       // task 4.2: queue position 
   int priority;                // task 4.4: priority field, gets from set_priority fun
   int run_time_ratio;          // task 4.4: (𝑟𝑢𝑡𝑖𝑚𝑒 ∙ 𝑑𝑒𝑐𝑎𝑦𝑓𝑎𝑐𝑡𝑜𝑟) / (𝑟𝑢𝑡𝑖𝑚𝑒+𝑠𝑡𝑖𝑚𝑒)
-  int start_cur_runnable;      // task 3
-  int start_cur_runtime;       // task 3
-  int start_cur_sleeping;      // task 3
 
 
   // proc_tree_lock must be held when using this:
