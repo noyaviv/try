@@ -580,35 +580,35 @@ scheduler(void)
     #endif
 
     #ifdef CFSD 
-    struct proc *proc_for_exec = 0;
-       for(p = proc; p < &proc[NPROC]; p++) {
-         acquire(&p->lock);
-         if (p->state == RUNNABLE){
-           if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
-             proc_for_exec = p;
-           }
-         }
-        release(&p->lock);
-       }
-    // struct proc* min_rt_ratio_p = 0;
-    // int min_rt_ratio = INT_MAX;
-    // for(p = proc; p < &proc[NPROC]; p++) {
-    //   acquire(&p->lock);
-    //   if(p->state == RUNNABLE) {
-    //     // p->priority is the decay factor.
-    //     int ratio;
-    //     if(((p->rutime)+(p->stime)) == 0){
-    //       ratio = 0;
-    //     }else{
-    //       ratio = ((p->rutime)*(p->priority))/((p->rutime)+(p->stime));
-    //     }
-    //     if(ratio < min_rt_ratio){
-    //       min_rt_ratio_p = p;
-    //       min_rt_ratio = ratio;
-    //     } 
-    //   }
-    //   release(&p->lock);
-    // }
+    // struct proc *proc_for_exec = 0;
+    //    for(p = proc; p < &proc[NPROC]; p++) {
+    //      acquire(&p->lock);
+    //      if (p->state == RUNNABLE){
+    //        if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
+    //          proc_for_exec = p;
+    //        }
+    //      }
+    //     release(&p->lock);
+    //    }
+    struct proc* min_rt_ratio_p = 0;
+    int min_rt_ratio = INT_MAX;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        // p->priority is the decay factor.
+        int ratio;
+        if(((p->rutime)+(p->stime)) == 0){
+          ratio = 0;
+        }else{
+          ratio = ((p->rutime)*(p->priority))/((p->rutime)+(p->stime));
+        }
+        if(ratio < min_rt_ratio){
+          min_rt_ratio_p = p;
+          min_rt_ratio = ratio;
+        } 
+      }
+      release(&p->lock);
+    }
 
     if(proc_for_exec != 0){
       acquire(&proc_for_exec->lock);
