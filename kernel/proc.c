@@ -565,7 +565,7 @@ scheduler(void)
           
           int currcputime = ticks;
           swtch(&c->context, &min_avg_brst->context);
-          int bursttime = ticks - currcputime;
+         // int bursttime = ticks - currcputime;
           //min_avg_brst->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*min_avg_brst->average_bursttime)/100 );
           min_avg_brst->average_bursttime = ALPHA*(ticks-currcputime)+(0.5*(min_avg_brst->average_bursttime));
           // Process is done running for now.
