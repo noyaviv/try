@@ -178,14 +178,6 @@ kerneltrap()
         yield();
 
     #endif
-    //  if(ticks % QUANTUM == 0){
-    //    switch(SCHEDFLAG) {
-    //      case FCFS :
-    //        break; 
-    //      default :
-    //        yield();
-    //    }
-    // } 
   }
 
   // the yield() may have caused some traps to occur,
