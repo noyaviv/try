@@ -583,8 +583,6 @@ scheduler(void)
       for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         if (p->state == RUNNABLE){
-          printf("ratio is : %d\n", ratio(p)); 
-          printf("while min ratio is : %d\n", ratio(proc_for_exec));
           if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
             proc_for_exec = p;
           }
@@ -599,9 +597,15 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           proc_for_exec->state = RUNNING;
+          acquire(&tickslock);
+          proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
+          proc_for_exec->start_cur_runtime = ticks;//
+          release(&tickslock);
           c->proc = proc_for_exec;
           swtch(&c->context, &proc_for_exec->context);
-
+          acquire(&tickslock);
+          proc_for_exec->rutime += (ticks - proc_for_exec->start_cur_runtime);
+          release(&tickslock);
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
@@ -693,6 +697,9 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
+  acquire(&tickslock);
+  p->start_cur_sleeping = ticks;
+  release(&tickslock);
 
   sched();
 
@@ -717,6 +724,10 @@ wakeup(void *chan)
       if(p->state == SLEEPING && p->chan == chan) {
         p->queue_location = alloc_queue_counter();
         p->state = RUNNABLE;
+        acquire(&tickslock);
+        p->stime += (ticks - proc_for_exec->start_cur_sleeping);  
+        p->start_cur_runnable = ticks;  
+        release(&tickslock);
       }
       release(&p->lock);
     }
@@ -738,6 +749,10 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
+        acquire(&tickslock);
+        p->stime += (ticks - proc_for_exec->start_cur_sleeping);  
+        p->start_cur_runnable = ticks;  
+        release(&tickslock);
         p->queue_location = alloc_queue_counter();
       }
       release(&p->lock);
