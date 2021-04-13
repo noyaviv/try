@@ -579,41 +579,83 @@ scheduler(void)
     #endif
 
     #ifdef CFSD 
-    // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
-    // needs to select a new process it will select the process with the minimum run time ratio
-      struct proc *proc_for_exec = 0;
-      for(p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
-        if (p->state == RUNNABLE){
-          if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
-            proc_for_exec = p;
-          }
+    struct proc* min_rt_ratio_p = 0;
+    int min_rt_ratio = INT_MAX;
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);
+      if(p->state == RUNNABLE) {
+        // p->priority is the decay factor.
+        int ratio;
+        if(((p->rutime)+(p->stime)) == 0){
+          ratio = 0;
+        }else{
+          ratio = ((p->rutime)*(p->priority))/((p->rutime)+(p->stime));
         }
-        release(&p->lock);
+        if(ratio < min_rt_ratio){
+          min_rt_ratio_p = p;
+          min_rt_ratio = ratio;
+        } 
       }
-      if (proc_for_exec != 0){
-        acquire(&proc_for_exec->lock);
-        if(proc_for_exec->state == RUNNABLE) {
-          //min_search_index = min_search_index + 1;
-          // Switch to chosen process.  It is the process's job
-          // to release its lock and then reacquire it
-          // before jumping back to us.
-          proc_for_exec->state = RUNNING;
-          //acquire(&tickslock);
-          proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
-          proc_for_exec->start_cur_runtime = ticks;//
-          //release(&tickslock);
-          c->proc = proc_for_exec;
-          swtch(&c->context, &proc_for_exec->context);
-          //acquire(&tickslock);
-          proc_for_exec->rutime += (ticks - proc_for_exec->start_cur_runtime);
-          //release(&tickslock);
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
-          c->proc = 0;
-        }
-        release(&proc_for_exec->lock);
-      } 
+      release(&p->lock);
+    }
+
+    if(min_rt_ratio_p != 0){
+      acquire(&min_rt_ratio_p->lock);
+      if(min_rt_ratio_p->state == RUNNABLE){
+        min_rt_ratio_p->state = RUNNING;
+        acquire(&tickslock);
+        min_rt_ratio_p->retime += (ticks - min_rt_ratio_p->start_cur_runnable);
+        min_rt_ratio_p->start_cur_runtime = ticks;
+        release(&tickslock);
+
+        c->proc = min_rt_ratio_p;
+        
+        acquire(&tickslock);
+        int currcputime = ticks;
+        release(&tickslock);
+
+        swtch(&c->context, &min_rt_ratio_p->context);
+        
+        acquire(&tickslock);
+        int bursttime = ticks - currcputime;
+        release(&tickslock);
+        
+        min_rt_ratio_p->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*min_rt_ratio_p->average_bursttime)/100 );
+        c->proc = 0;
+      }
+      release(&min_rt_ratio_p->lock);
+    }
+    // // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
+    // // needs to select a new process it will select the process with the minimum run time ratio
+    //   struct proc *proc_for_exec = 0;
+    //   for(p = proc; p < &proc[NPROC]; p++) {
+    //     acquire(&p->lock);
+    //     if (p->state == RUNNABLE){
+    //       if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
+    //         proc_for_exec = p;
+    //       }
+    //     }
+    //     release(&p->lock);
+    //   }
+    //   if (proc_for_exec != 0){
+    //     acquire(&proc_for_exec->lock);
+    //     if(proc_for_exec->state == RUNNABLE) {
+    //       proc_for_exec->state = RUNNING;
+    //       //acquire(&tickslock);
+    //       proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
+    //       proc_for_exec->start_cur_runtime = ticks;//
+    //       //release(&tickslock);
+    //       c->proc = proc_for_exec;
+    //       swtch(&c->context, &proc_for_exec->context);
+    //       //acquire(&tickslock);
+    //       proc_for_exec->rutime += (ticks - proc_for_exec->start_cur_runtime);
+    //       //release(&tickslock);
+    //       // Process is done running for now.
+    //       // It should have changed its p->state before coming back.
+    //       c->proc = 0;
+    //     }
+    //     release(&proc_for_exec->lock);
+    //   } 
     #endif 
   }
 }
