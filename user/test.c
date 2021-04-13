@@ -40,7 +40,8 @@ int main(int argc, char** argv){
     //test_with_lots_of_processes_for_order_checks();                                                                  
     //test_for_FCFS();
     //test_for_FCFS_2childs_different_creation_time();
-    test_for_SRT_preemptive();
+    test_with_lots_of_processes_for_order_checks();
+    //test_for_SRT_preemptive();
     exit(0);
 
 }

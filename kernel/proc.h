@@ -104,7 +104,6 @@ struct proc {
   int priority;                // task 4.4: priority field, gets from set_priority fun
   int run_time_ratio;          // task 4.4: (𝑟𝑢𝑡𝑖𝑚𝑒 ∙ 𝑑𝑒𝑐𝑎𝑦𝑓𝑎𝑐𝑡𝑜𝑟) / (𝑟𝑢𝑡𝑖𝑚𝑒+𝑠𝑡𝑖𝑚𝑒)
 
-
   // proc_tree_lock must be held when using this:
   struct proc *parent;         // Parent process
 
