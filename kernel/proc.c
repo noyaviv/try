@@ -599,15 +599,15 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           proc_for_exec->state = RUNNING;
-          acquire(&tickslock);
+          //acquire(&tickslock);
           proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
           proc_for_exec->start_cur_runtime = ticks;//
-          release(&tickslock);
+          //release(&tickslock);
           c->proc = proc_for_exec;
           swtch(&c->context, &proc_for_exec->context);
-          acquire(&tickslock);
+          //acquire(&tickslock);
           proc_for_exec->rutime += (ticks - proc_for_exec->start_cur_runtime);
-          release(&tickslock);
+          //release(&tickslock);
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
