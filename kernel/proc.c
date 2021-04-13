@@ -610,62 +610,52 @@ scheduler(void)
     //   release(&p->lock);
     // }
 
-    // if(proc_for_exec != 0){
-    //   acquire(&proc_for_exec->lock);
-    //   if(proc_for_exec->state == RUNNABLE){
-    //     proc_for_exec->state = RUNNING;
-    //     acquire(&tickslock);
-    //     proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);
-    //     proc_for_exec->start_cur_runtime = ticks;
-    //     release(&tickslock);
+    if(proc_for_exec != 0){
+      acquire(&proc_for_exec->lock);
+      if(proc_for_exec->state == RUNNABLE){
+        proc_for_exec->state = RUNNING;
+        acquire(&tickslock);
+        proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);
+        proc_for_exec->start_cur_runtime = ticks;
+        release(&tickslock);
 
-    //     c->proc = proc_for_exec;
+        c->proc = proc_for_exec;
         
-    //     acquire(&tickslock);
-    //     int currcputime = ticks;
-    //     release(&tickslock);
+        acquire(&tickslock);
+        int currcputime = ticks;
+        release(&tickslock);
 
-    //     swtch(&c->context, &proc_for_exec->context);
+        swtch(&c->context, &proc_for_exec->context);
         
-    //     acquire(&tickslock);
-    //     int bursttime = ticks - currcputime;
-    //     release(&tickslock);
+        acquire(&tickslock);
+        int bursttime = ticks - currcputime;
+        release(&tickslock);
         
-    //     proc_for_exec->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
-    //     c->proc = 0;
-    //   }
-    //   release(&proc_for_exec->lock);
-    // }
+        proc_for_exec->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
+        c->proc = 0;
+      }
+      release(&proc_for_exec->lock);
+    }
 
-      if (proc_for_exec != 0){
-        acquire(&proc_for_exec->lock);
-        if(proc_for_exec->state == RUNNABLE) {
-          proc_for_exec->state = RUNNING;
-          acquire(&tickslock);
-          proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);
-          proc_for_exec->start_cur_runtime = ticks;
-          release(&tickslock);
-
-          c->proc = proc_for_exec;
-          acquire(&tickslock);
-          int currcputime = ticks;
-          release(&tickslock);
-          swtch(&c->context, &proc_for_exec->context);
-
-          acquire(&tickslock);
-          int bursttime = ticks - currcputime;
-          release(&tickslock);
-          proc_for_exec->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
-    
-          //acquire(&tickslock);
+    //   if (proc_for_exec != 0){
+    //     acquire(&proc_for_exec->lock);
+    //     if(proc_for_exec->state == RUNNABLE) {
+    //       proc_for_exec->state = RUNNING;
+    //       //acquire(&tickslock);
+    //       proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);//
+    //       proc_for_exec->start_cur_runtime = ticks;//
+    //       //release(&tickslock);
+    //       c->proc = proc_for_exec;
+    //       swtch(&c->context, &proc_for_exec->context);
+    //       //acquire(&tickslock);
   
-          //release(&tickslock);
-          // Process is done running for now.
-          // It should have changed its p->state before coming back.
-          c->proc = 0;
-        }
-        release(&proc_for_exec->lock);
-      } 
+    //       //release(&tickslock);
+    //       // Process is done running for now.
+    //       // It should have changed its p->state before coming back.
+    //       c->proc = 0;
+    //     }
+    //     release(&proc_for_exec->lock);
+    //   } 
     #endif 
   }
 }
