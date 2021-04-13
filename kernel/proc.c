@@ -555,8 +555,8 @@ scheduler(void)
        for(p = proc; p < &proc[NPROC]; p++) {
          acquire(&p->lock);
          if (p->state == RUNNABLE){
-           if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
-             min_burst_time_proc = p;
+           if (min_avg_brst == 0 || p->average_bursttime < min_avg_brst->average_bursttime){
+             min_avg_brst = p;
            }
          }
          release(&p->lock);
