@@ -501,8 +501,24 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           p->state = RUNNING;
+
+          acquire(&tickslock);
+          p->retime += (ticks - p->start_cur_runnable);
+          p->start_cur_runtime = ticks;
+          release(&tickslock);
+
           c->proc = p;
           swtch(&c->context, &p->context);
+
+          acquire(&tickslock);
+          int currcputime = ticks;
+          release(&tickslock);
+
+          swtch(&c->context, &min_burst_time_proc->context);
+          acquire(&tickslock);
+          int bursttime = ticks - currcputime;
+          release(&tickslock);
+          p->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*p->average_bursttime)/100 );
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
@@ -531,8 +547,22 @@ scheduler(void)
           // to release its lock and then reacquire it
           // before jumping back to us.
           proc_for_exec->state = RUNNING;
+
+          acquire(&tickslock);
+          proc_for_exec->retime += (ticks - proc_for_exec->start_cur_runnable);
+          proc_for_exec->start_cur_runtime = ticks;
+          release(&tickslock);
+
           c->proc = proc_for_exec;
+          acquire(&tickslock);
+          int currcputime = ticks;
+          release(&tickslock);
+
           swtch(&c->context, &proc_for_exec->context);
+          acquire(&tickslock);
+          int bursttime = ticks - currcputime;
+          release(&tickslock);
+          proc_for_exec->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
 
           // Process is done running for now.
           // It should have changed its p->state before coming back.
@@ -559,6 +589,11 @@ scheduler(void)
         acquire(&min_burst_time_proc->lock);
         if(min_burst_time_proc->state == RUNNABLE){
           min_burst_time_proc->state = RUNNING;
+
+          acquire(&tickslock);
+          min_burst_time_proc->retime += (ticks - min_burst_time_proc->start_cur_runnable);
+          min_burst_time_proc->start_cur_runtime = ticks;
+          release(&tickslock);
 
           c->proc = min_burst_time_proc;
           acquire(&tickslock);
