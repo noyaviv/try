@@ -186,10 +186,11 @@ void test_for_bursttime_when_proces_with_lots_short_running_time(int num){
         }
     }
     else{//father
-    int t_pid = wait_stat(0, performance);
-    fprintf(1, "terminated pid: %d, ctime: %d, ttime: %d, stime: %d, retime: %d, rutime: %d average_bursttime: %d \n",
-                t_pid, performance->ctime, performance->ttime, performance->stime, performance->retime, performance->rutime,
-                 performance->average_bursttime);
+    printf("father is in the house"); 
+    // int t_pid = wait_stat(0, performance);
+    // fprintf(1, "terminated pid: %d, ctime: %d, ttime: %d, stime: %d, retime: %d, rutime: %d average_bursttime: %d \n",
+    //             t_pid, performance->ctime, performance->ttime, performance->stime, performance->retime, performance->rutime,
+    //              performance->average_bursttime);
     }
 }
 //terminated pid: 14, ctime: 170, ttime: 171, stime: 1, retime: 0, rutime: 0 average_bursttime: 100 
@@ -205,7 +206,7 @@ void test_for_bursttime_when_son_does_long_stuff(){
         }
     }
     else{//father
-    fprintf("father rules"); 
+    printf("father rules"); 
     //int t_pid = wait_stat(0, performance);
     //fprintf(1, "terminated pid: %d, ctime: %d, ttime: %d, stime: %d, retime: %d, rutime: %d average_bursttime: %d \n",
               //  t_pid, performance->ctime, performance->ttime, performance->stime, performance->retime, performance->rutime,
