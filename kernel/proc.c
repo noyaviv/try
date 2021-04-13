@@ -725,7 +725,7 @@ wakeup(void *chan)
         p->queue_location = alloc_queue_counter();
         p->state = RUNNABLE;
         acquire(&tickslock);
-        p->stime += (ticks - proc_for_exec->start_cur_sleeping);  
+        p->stime += (ticks - p->start_cur_sleeping);  
         p->start_cur_runnable = ticks;  
         release(&tickslock);
       }
@@ -750,7 +750,7 @@ kill(int pid)
         // Wake process from sleep().
         p->state = RUNNABLE;
         acquire(&tickslock);
-        p->stime += (ticks - proc_for_exec->start_cur_sleeping);  
+        p->stime += (ticks - p->start_cur_sleeping);  
         p->start_cur_runnable = ticks;  
         release(&tickslock);
         p->queue_location = alloc_queue_counter();
