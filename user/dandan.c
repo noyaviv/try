@@ -1,100 +1,91 @@
 #include "kernel/types.h"
 #include "user/user.h"
-#include "kernel/stat.h"
-
 #include "kernel/fcntl.h"
-#include "kernel/syscall.h"
-//#include "kernel/perf.h"
 
 struct perf {
-  int ctime;                   //creation time
-  int ttime;                   //termination time
-  int stime;                   //sleeping time
-  int retime;                  //tunnable time
-  int rutime;                  //running time
-  int average_bursttime;
+  int ctime;                   // Process creation time
+  int ttime;                   // Process termination time    
+  int stime;                   // Total time spent SLEEPING state
+  int retime;                  // Total time spent RUNNABLE state
+  int rutime;                  // Total time spent RUNNING state
+  int average_bursttime;       // approx. estimated burst time
 };
 
-int main (int argc, char**argv){
 
-    struct perf pe;
-    int status;
-    int id;
-    int sum;
-    int i;
-    // printf("trace.c. status addr = %d, performance addr = %d\n", &status, &pe);
+int main(int argc, char** argv){
 
-    int mask= (1<< SYS_fork) | (1<<SYS_wait);
-//(1<<SYS_set_priority);
-    trace(mask,getpid());
-   // set_priority(1);
+    printf("started\n");
+    int pid2= fork();
+     
+    if (pid2 == 0)
+    {
+    
+       int c = 0;
 
-    // trace(mask,2);
-    if(fork()==0){
-        printf("inside child1\n");
-                        // sleep(3);
-        //set_priority(2);
-
-        if(fork()==0){
-            //set_priority(3);
-                        // sleep(3);
-            sum = 0;
-            for (i=0; i<1000000; i++) 
-                sum += i;
-
-           sleep(3);
-            printf("back from sleep 3\n");
-            
-            for (i=0; i<1000000; i++) 
-                sum += i;
+        while (c < 3)
+        {
+            printf("child is running\n");
+            sleep(10);
+            c++;
         }
-        else {
-                        // wait(0);
-                        // sleep(3);
+        while (c < 3000)
+        {
+            printf("%d", c);
+            c++;
+        }
+        printf("\n");
+     }
+     else
+     {
+        int* status;
+        struct perf p;
+        int id = getpid();
+        status = &id;
         
-            sum = 0;
-            for (i=0; i<1000000; i++) 
-                sum += i;
-            sleep(1);
-            printf("back from sleep 2\n");
-            for (i=0; i<1; i++) 
-                sum += i;
 
-            id = wait_stat(&status,&pe);
-            printf("pid %d\n", id);
-            printf("ctime: %d\n", pe.ctime);
-            printf("ttime: %d\n", pe.ttime);
-            printf("stime: %d\n", pe.stime);
-            printf("retime: %d\n", pe.retime);
-            printf("rutime: %d\n", pe.rutime);
-            // printf("%lf\n", pe.bursttime); //@TODO
-        }
-    }
-    else {
-        printf("inside else\n");
-                    // wait(0);
-                    // sleep(3);
+         int x = wait_stat(status, &p);
 
-        sum = 0;
-        for (i=0; i<1000; i++) 
-            sum += i;
+        printf("ret val: %d \n", x);
+        printf("ctime: %d \n", p.ctime);
+        printf("ttime: %d \n", p.ttime);
+        printf("stime: %d \n", p.stime);
+        printf("retime: %d \n", p.retime);
+        printf("rutime: %d\n", p.rutime);
+        printf("avgburst: %d\n", p.average_bursttime);
+        set_priority(1);
+     }
 
-        printf("after for 1\n");
-        sleep(1);
-        printf("back from sleep 1\n");
-        for (i=0; i<1000000; i++) 
-            sum += i;
-            
-        printf("before wait_stat\n");
-        id = wait_stat(&status,&pe);
-        printf("after wait_stat\n");
-        printf("pid %d\n", id);
-        printf("ctime: %d\n", pe.ctime);
-        printf("ttime: %d\n", pe.ttime);
-        printf("stime: %d\n", pe.stime);
-        printf("retime: %d\n", pe.retime);
-        printf("rutime: %d\n", pe.rutime);
-        // printf("bursttime: %d\n", pe.bursttime); //@TODO
-    }
+    sleep(1);
     exit(0);
+
+
+    // fprintf(2, "Hello world!\n");
+    // int mask = 1;               //for printing fork
+    // sleep(1);                   //doesn't print this sleep
+    // trace(mask, getpid());
+    // int cpid = fork();          //prints fork once
+    // if (cpid == 0){
+    //     fork();                 // prints fork for the second time - the first son forks
+    //     mask = 8191;            //to turn on only the sleep bit
+    //     //mask = 4097;          //you can uncomment this in order to check you print for both fork and sleep syscalls
+    //     trace(mask, getpid());  //the first son and the grandchilde changes mask to print sleep
+    //     sleep(1);
+    //     fork();                 //should print nothing
+    //     sbrk(2048);
+    //     kill(getpid());
+    //     exit(0);                //shold print nothing
+    // }
+    // else {
+    //     sleep(10);              // the father doesnt print it - has original mask
+    // }
+
+    
 }
+
+/* example for right printing:
+
+3: syscall fork 0-> 4
+4: syscall fork 0-> 5 of line 12
+4: syscall sleep -> 0
+5: syscall sleep -> 0
+ */
