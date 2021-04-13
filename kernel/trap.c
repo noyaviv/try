@@ -86,17 +86,6 @@ usertrap(void)
       if(tick % QUANTUM == 0)
         yield();
     #endif
-
-    // #ifdef SCHEDUALFLAG
-    //   if(ticks % QUANTUM == 0){
-    //     switch(SCHEDFLAG) {
-    //       case FCFS :
-    //         break; 
-    //       default :
-    //         yield();
-    //     }
-    //   }
-    // #endif
   }
 
   usertrapret();

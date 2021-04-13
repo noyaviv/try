@@ -580,8 +580,9 @@ scheduler(void)
     #ifdef CFSD 
     // A preemptive policy inspired by Linux CFS (this is not actual CFS). Each time the scheduler
     // needs to select a new process it will select the process with the minimum run time ratio
-    struct proc* min_rt_ratio_p = 0;
+    struct proc* proc_for_exec = 0;
     int min_rt_ratio = INT_MAX;
+    //loof for finding the process with the min ratio
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);
       if(p->state == RUNNABLE) {
@@ -593,34 +594,34 @@ scheduler(void)
           ratio = ((p->rutime)*(p->priority))/((p->rutime)+(p->stime));
         }
         if(ratio < min_rt_ratio){
-          min_rt_ratio_p = p;
+          proc_for_exec = p;
           min_rt_ratio = ratio;
         } 
       }
       release(&p->lock);
     }
 
-    if(min_rt_ratio_p != 0){
-      acquire(&min_rt_ratio_p->lock);
-      if(min_rt_ratio_p->state == RUNNABLE){
-        min_rt_ratio_p->state = RUNNING;
+    if(proc_for_exec != 0){
+      acquire(&proc_for_exec->lock);
+      if(proc_for_exec->state == RUNNABLE){
+        proc_for_exec->state = RUNNING;
 
-        c->proc = min_rt_ratio_p;
+        c->proc = proc_for_exec;
         
         acquire(&tickslock);
-        int currcputime = ticks;
+        int start_running = ticks;
         release(&tickslock);
 
-        swtch(&c->context, &min_rt_ratio_p->context);
+        swtch(&c->context, &proc_for_exec->context);
         
         acquire(&tickslock);
-        int bursttime = ticks - currcputime;
+        int curr_bursttime = ticks - start_running;
         release(&tickslock);
         
-        min_rt_ratio_p->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*min_rt_ratio_p->average_bursttime)/100 );
+        proc_for_exec->average_bursttime = ( (ALPHA * curr_bursttime) + ((100 - ALPHA)*proc_for_exec->average_bursttime)/100 );
         c->proc = 0;
       }
-      release(&min_rt_ratio_p->lock);
+      release(&proc_for_exec->lock);
     }
     #endif 
   }
@@ -860,50 +861,42 @@ wait_stat(int* status, struct perf * performance)
 
         havekids = 1;
         if(np->state == ZOMBIE){
-          printf("\nIts got to proc.c line 1");
           // Found one.
           pid = np->pid;
           if (copyout(p->pagetable, ((uint64)&(performance->ctime)) , (char *)&np->ctime, 24) < 0){
-            printf("\nIts got to proc.c line 2");
             release(&np->lock);
             release(&wait_lock);
             return -1;
           }
           else if (copyout(p->pagetable, ((uint64)&(performance->ttime)) , (char *)&np->ttime, 24) < 0){
-            printf("\nIts got to proc.c line 3");
             release(&np->lock);
             release(&wait_lock);
             return -1;
           }       
           else if (copyout(p->pagetable, ((uint64)&(performance->stime)) , (char *)&np->stime, 24) < 0){
-            printf("\nIts got to proc.c line 4");
             release(&np->lock);
             release(&wait_lock);
             return -1;
           }          
           else if (copyout(p->pagetable, ((uint64)&(performance->retime)) , (char *)&np->retime, 24) < 0){
-            printf("\nIts got to proc.c line 5");
             release(&np->lock);
             release(&wait_lock);
             return -1;
 
           }
           else if (copyout(p->pagetable, ((uint64)&(performance->rutime)) , (char *)&np->rutime, 24) < 0){
-            printf("\nIts got to proc.c line 6");
             release(&np->lock);
             release(&wait_lock);
             return -1;
 
           }
           else if (copyout(p->pagetable, ((uint64)&(performance->average_bursttime)) , (char *)&np->average_bursttime, 24) < 0){
-            printf("\nIts got to proc.c line 7");
             release(&np->lock);
             release(&wait_lock);
             return -1;
           }
           else if(((uint64)status) != 0 && copyout(p->pagetable, ((uint64)status) , (char *)&np->xstate,
                                   sizeof(np->xstate)) < 0) {
-            printf("\nIts got to proc.c line 8");
             release(&np->lock);
             release(&wait_lock);
             return -1;
