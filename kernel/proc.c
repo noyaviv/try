@@ -542,15 +542,25 @@ scheduler(void)
     #ifdef SRT
     //struct proc *p;
       struct proc* min_avg_brst = 0;
-      int avg_brst = INT_MAX;
-      for(p = proc; p < &proc[NPROC]; p++) {
-        acquire(&p->lock);
-        if(p->state == RUNNABLE && p->average_bursttime < avg_brst) {
-          min_avg_brst = p;
-          avg_brst = p->average_bursttime;
-        }
-        release(&p->lock);
-      }
+      // int avg_brst = INT_MAX;
+      // for(p = proc; p < &proc[NPROC]; p++) {
+      //   acquire(&p->lock);
+      //   if(p->state == RUNNABLE && p->average_bursttime < avg_brst) {
+      //     min_avg_brst = p;
+      //     avg_brst = p->average_bursttime;
+      //   }
+      //   release(&p->lock);
+      // }
+
+       for(p = proc; p < &proc[NPROC]; p++) {
+         acquire(&p->lock);
+         if (p->state == RUNNABLE){
+           if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
+             min_burst_time_proc = p;
+           }
+         }
+         release(&p->lock);
+       }
 
       if(min_avg_brst != 0){
         acquire(&min_avg_brst->lock);
@@ -602,8 +612,6 @@ scheduler(void)
       //     // acquire(&tickslock);
       //      min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
       //     //release(&tickslock);
-      //     // Process is done running for now.
-      //     // It should have changed its p->state before coming back.
       //     c->proc = 0;
       //   }
       //   release(&min_burst_time_proc->lock);
