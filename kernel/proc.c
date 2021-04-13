@@ -147,9 +147,9 @@ allocproc(void)
 found:
   p->pid = allocpid();
   p->state = USED;
-  acquire(&tickslock);
+  //acquire(&tickslock);
   p->ctime = ticks; 
-  release(&tickslock);
+  //release(&tickslock);
   p->stime =0;      
   p->retime =0;     
   p->rutime=0;      
@@ -414,9 +414,9 @@ exit(int status)
 
   p->xstate = status;
   p->state = ZOMBIE;
-  acquire(&tickslock);
+  //acquire(&tickslock);
   p->ttime = ticks;
-  release(&tickslock);
+  //release(&tickslock);
 
   release(&wait_lock);
 
@@ -701,9 +701,9 @@ sleep(void *chan, struct spinlock *lk)
   // Go to sleep.
   p->chan = chan;
   p->state = SLEEPING;
-  acquire(&tickslock);
+  //acquire(&tickslock);
   p->start_cur_sleeping = ticks;
-  release(&tickslock);
+  //release(&tickslock);
 
   sched();
 
