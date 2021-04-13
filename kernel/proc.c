@@ -574,25 +574,6 @@ scheduler(void)
         release(&min_burst_time_proc->lock);
       }
 
-      // // after finding min process- switch cpu to run it
-      // if(min_burst_time_proc != 0) {
-      //   acquire(&min_burst_time_proc->lock);
-      //   if (min_burst_time_proc->state == RUNNABLE){
-      //     min_burst_time_proc->state = RUNNING;
-      //     c->proc = min_burst_time_proc;
-      //     //acquire(&tickslock);
-      //     int cur_ticks = ticks;
-      //     //release(&tickslock);
-      //     // min_burst_time_proc->start_running_tick=ticks;
-      //     swtch(&(c->context), &(min_burst_time_proc->context));
-      //     // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
-      //     // acquire(&tickslock);
-      //      min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
-      //     //release(&tickslock);
-      //     c->proc = 0;
-      //   }
-      //   release(&min_burst_time_proc->lock);
-      // }
     #endif
 
     #ifdef CFSD 
