@@ -281,6 +281,7 @@ userinit(void)
   p->cwd = namei("/");
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
+  p->start_cur_runnable = ticks; 
   //p->priority = 5; // decay factor for normal priority
   release(&p->lock);
 }
@@ -355,6 +356,7 @@ fork(void)
   acquire(&np->lock);
   np->queue_location = alloc_queue_counter();
   np->state = RUNNABLE;
+  np->start_cur_runnable = ticks; 
   release(&np->lock);
 
   return pid;
@@ -652,6 +654,8 @@ yield(void)
   acquire(&p->lock);
   p->queue_location = alloc_queue_counter();
   p->state = RUNNABLE;
+  p->rutime += (ticks - (p->start_cur_runnable));
+  p->start_cur_runnable = ticks; 
   sched();
   release(&p->lock);
 }
@@ -724,10 +728,10 @@ wakeup(void *chan)
       if(p->state == SLEEPING && p->chan == chan) {
         p->queue_location = alloc_queue_counter();
         p->state = RUNNABLE;
-        acquire(&tickslock);
+       // acquire(&tickslock);
         p->stime += (ticks - p->start_cur_sleeping);  
         p->start_cur_runnable = ticks;  
-        release(&tickslock);
+        //release(&tickslock);
       }
       release(&p->lock);
     }
@@ -749,10 +753,10 @@ kill(int pid)
       if(p->state == SLEEPING){
         // Wake process from sleep().
         p->state = RUNNABLE;
-        acquire(&tickslock);
+       // acquire(&tickslock);
         p->stime += (ticks - p->start_cur_sleeping);  
         p->start_cur_runnable = ticks;  
-        release(&tickslock);
+        //release(&tickslock);
         p->queue_location = alloc_queue_counter();
       }
       release(&p->lock);
