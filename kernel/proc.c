@@ -5,6 +5,7 @@
 #include "spinlock.h"
 #include "proc.h"
 #include "defs.h"
+#include <limits.h>
 
 struct cpu cpus[NCPU];
 
@@ -539,39 +540,74 @@ scheduler(void)
     #endif
     
     #ifdef SRT
-      struct proc *min_burst_time_proc = 0;
-
+    //struct proc *p;
+      struct proc* min_avg_brst = 0;
+      int avg_brst = INT_MAX;
       for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
-        if (p->state == RUNNABLE){
-          if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
-            min_burst_time_proc = p;
-          }
+        if(p->state == RUNNABLE && p->average_bursttime < avg_brst) {
+          min_avg_brst = p;
+          avg_brst = p->average_bursttime;
         }
         release(&p->lock);
       }
 
-      // after finding min process- switch cpu to run it
-      if(min_burst_time_proc != 0) {
-        acquire(&min_burst_time_proc->lock);
-        if (min_burst_time_proc->state == RUNNABLE){
-          min_burst_time_proc->state = RUNNING;
-          c->proc = min_burst_time_proc;
-          //acquire(&tickslock);
-          int cur_ticks = ticks;
-          //release(&tickslock);
-          // min_burst_time_proc->start_running_tick=ticks;
-          swtch(&(c->context), &(min_burst_time_proc->context));
-          // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
-          // acquire(&tickslock);
-           min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
-          //release(&tickslock);
+      if(min_avg_brst != 0){
+        acquire(&min_avg_brst->lock);
+        // Switch to chosen process.  It is the process's job
+        // to release its lock and then reacquire it
+        // before jumping back to us.
+        if(min_avg_brst->state == RUNNABLE){
+          min_avg_brst->state = RUNNING;
+        //  min_avg_brst->retime += (ticks - min_avg_brst->runnabletimestamp);//
+        //  min_avg_brst->runningtimestamp = ticks;//
+          c->proc = min_avg_brst;
+          
+          int currcputime = ticks;
+          swtch(&c->context, &min_avg_brst->context);
+          int bursttime = ticks - currcputime;
+          min_avg_brst->average_bursttime = ( (ALPHA * bursttime) + ((100 - ALPHA)*min_avg_brst->average_bursttime)/100 );
+        
+
           // Process is done running for now.
           // It should have changed its p->state before coming back.
           c->proc = 0;
         }
-        release(&min_burst_time_proc->lock);
+        release(&min_avg_brst->lock);
       }
+      // struct proc *min_burst_time_proc = 0;
+
+      // for(p = proc; p < &proc[NPROC]; p++) {
+      //   acquire(&p->lock);
+      //   if (p->state == RUNNABLE){
+      //     if (min_burst_time_proc == 0 || p->average_bursttime < min_burst_time_proc->average_bursttime){
+      //       min_burst_time_proc = p;
+      //     }
+      //   }
+      //   release(&p->lock);
+      // }
+
+      // // after finding min process- switch cpu to run it
+      // if(min_burst_time_proc != 0) {
+      //   acquire(&min_burst_time_proc->lock);
+      //   if (min_burst_time_proc->state == RUNNABLE){
+      //     min_burst_time_proc->state = RUNNING;
+      //     c->proc = min_burst_time_proc;
+      //     //acquire(&tickslock);
+      //     int cur_ticks = ticks;
+      //     //release(&tickslock);
+      //     // min_burst_time_proc->start_running_tick=ticks;
+      //     swtch(&(c->context), &(min_burst_time_proc->context));
+      //     // int updated = (50*(current_bursttime)+(0.5*(p->average_bursttime)));
+      //     // acquire(&tickslock);
+      //      min_burst_time_proc->average_bursttime = ALPHA*(ticks-cur_ticks)+(0.5*(min_burst_time_proc->average_bursttime));
+      //     //release(&tickslock);
+      //     // Process is done running for now.
+      //     // It should have changed its p->state before coming back.
+      //     c->proc = 0;
+      //   }
+      //   release(&min_burst_time_proc->lock);
+      // }
     #endif
 
     #ifdef CFSD 
