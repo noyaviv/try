@@ -583,6 +583,8 @@ scheduler(void)
       for(p = proc; p < &proc[NPROC]; p++) {
         acquire(&p->lock);
         if (p->state == RUNNABLE){
+          printf("ratio is : %d\n", ratio(p)); 
+          printf("while min ratio is : %d\n", ratio(proc_for_exec));
           if (proc_for_exec == 0 || ratio(p) < ratio(proc_for_exec)){
             proc_for_exec = p;
           }

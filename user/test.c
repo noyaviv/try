@@ -21,7 +21,6 @@ struct perf {
     int retime;
     int rutime;
     int average_bursttime; //average of bursstimes in 100ths (so average*100)
-
 };
 
 
@@ -177,7 +176,7 @@ void test_with_lots_of_processes_for_order_checks(){
 
 void test_for_bursttime_when_proces_with_lots_short_running_time(int num){
     int i=0;
-    struct perf* performance = malloc(sizeof(struct perf));
+    //struct perf* performance = malloc(sizeof(struct perf));
     int cpid=fork();
     if(cpid==0){//son like sunshine
         while(i<num){
