@@ -41,7 +41,7 @@ int main(int argc, char** argv){
     //test_for_FCFS();
     //test_for_FCFS_2childs_different_creation_time();
     test_for_bursttime_when_proces_with_lots_short_running_time(2);
-    test_with_lots_of_processes_for_order_checks();
+    //test_with_lots_of_processes_for_order_checks();
     //test_for_SRT_preemptive();
     exit(0);
 
@@ -197,7 +197,7 @@ void test_for_bursttime_when_proces_with_lots_short_running_time(int num){
 
 void test_for_bursttime_when_son_does_long_stuff(){
     int i=0;
-    struct perf* performance = malloc(sizeof(struct perf));
+    //struct perf* performance = malloc(sizeof(struct perf));
     int cpid=fork();
     if(cpid==0){//son like sunshine
         while(i<1000000000){
@@ -205,10 +205,11 @@ void test_for_bursttime_when_son_does_long_stuff(){
         }
     }
     else{//father
-    int t_pid = wait_stat(0, performance);
-    fprintf(1, "terminated pid: %d, ctime: %d, ttime: %d, stime: %d, retime: %d, rutime: %d average_bursttime: %d \n",
-                t_pid, performance->ctime, performance->ttime, performance->stime, performance->retime, performance->rutime,
-                 performance->average_bursttime);
+    fprintf("father rules"); 
+    //int t_pid = wait_stat(0, performance);
+    //fprintf(1, "terminated pid: %d, ctime: %d, ttime: %d, stime: %d, retime: %d, rutime: %d average_bursttime: %d \n",
+              //  t_pid, performance->ctime, performance->ttime, performance->stime, performance->retime, performance->rutime,
+              //   performance->average_bursttime);
     }
 }
 //terminated pid: 4, ctime: 19, ttime: 37, stime: 0, retime: 0, rutime: 18 average_bursttime: 300
